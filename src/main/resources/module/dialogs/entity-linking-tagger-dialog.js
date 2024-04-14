@@ -1,43 +1,27 @@
-// <div className="dialog-frame aidava-tagger">
-//     <div className="dialog-header">
-//         Tag column named "<span className="tagger-column-name">column</span>" for Entity Linking Workflow
-//     </div>
-//     <div className="dialog-body">
-//         <fieldset>
-//             <p>
-//                 Select the Language that is used in the column.
-//             </p>
-//             <ol bind="el-langs"></ol>
-//         </fieldset>
-//     </div>
-//     <div className="dialog-footer">
-//         <button bind="cancel" className="button">Cancel</button>
-//         <button bind="tag" className="button default" disabled>Tag</button>
-//     </div>
-// </div>
-
-//
-// JS File for Tagger Dialog
-// HTML: src/main/resources/module/dialogs/nlp-tagger-dialog.html
-// <div class="dialog-frame">
+// <div class="dialog-frame aidava-tagger">
 //     <div class="dialog-header">
-//         Tag column named "<span class="tagger-column-name">column</span>" for NLP Workflow
+//         Tag column named "<span class="tagger-column-name">column</span>" for Entity Linking Workflow
 //     </div>
 //     <div class="dialog-body">
 //         <fieldset>
 //             <p>
-//                 Select the NLP model that needs to be used for this column.
+//                 Select the Language that is used in the column.
 //             </p>
-//             <ol bind="nlp-models"></ol>
+//             <ol bind="el-langs" class="language"></ol>
+//         </fieldset>
+//         <br/>
+//         <fieldset>
+//             <p>
+//                 Select the Target Terminology for the column.
+//             </p>
+//             <ol bind="el-terminologies" class="terminology"></ol>
 //         </fieldset>
 //     </div>
 //     <div class="dialog-footer">
-//         <button class="button" bind="cancel">Cancel</button>
-//         <button class="button default" bind="tag">Tag</button>
+//         <button bind="cancel" class="button">Cancel</button>
+//         <button bind="tag" class="button default" disabled>Tag</button>
 //     </div>
 // </div>
-//
-
 
 function EntityLinkingTaggerDialog(column) {
     this.column = column;
@@ -46,7 +30,8 @@ function EntityLinkingTaggerDialog(column) {
 EntityLinkingTaggerDialog.prototype = {
     init: function (callback) {
         let self = this,
-            selectedModel = null,
+            selectedLanguage = null,
+            selectedTerminology = null,
             dialogElement = this.dialogElement = $(DOM.loadHTML("aidava-tagger", "dialogs/entity-linking-tagger-dialog.html"));
         // Populate labels
         $(".tagger-column-name", dialogElement).text(this.column.name);
@@ -54,7 +39,7 @@ EntityLinkingTaggerDialog.prototype = {
         let controls = DOM.bind(dialogElement);
         controls.cancel.click(this.bound("hide"));
         controls.tag.click(() => {
-            self.tag(selectedModel);
+            self.tag(selectedLanguage, selectedTerminology);
         });
 
         // Load NLP models
@@ -64,14 +49,35 @@ EntityLinkingTaggerDialog.prototype = {
             {name: "Estonian", value: "et"}
         ];
 
-        let modelList = $("ol", dialogElement);
+        let terminologies = [
+            {name: "Snomed CT", value: "snomed"},
+            {name: "ICD-10", value: "icd10"},
+            {name: "LOINC", value: "loinc"}
+        ];
+
+        let langList = $("ol.language", dialogElement);
+        let terminologyList = $("ol.terminology", dialogElement);
 
         langs.forEach((model) => {
-            let li = $("<li></li>").appendTo(modelList);
-            let radio = $('<input type="radio" name="nlp-model" value="' + model.value + '">').appendTo(li);
+            let li = $("<li></li>").appendTo(langList);
+            let radio = $('<input type="radio" name="language" value="' + model.value + '">').appendTo(li);
             radio.click(() => {
-                selectedModel = model.value;
-                controls.tag.prop("disabled", false);
+                selectedLanguage = model.value;
+                if (selectedTerminology) {
+                    controls.tag.prop("disabled", false);
+                }
+            });
+            $('<label>' + model.name + '</label>').appendTo(li);
+        });
+
+        terminologies.forEach((model) => {
+            let li = $("<li></li>").appendTo(terminologyList);
+            let radio = $('<input type="radio" name="terminology" value="' + model.value + '">').appendTo(li);
+            radio.click(() => {
+                selectedTerminology = model.value;
+                if (selectedLanguage) {
+                    controls.tag.prop("disabled", false);
+                }
             });
             $('<label>' + model.name + '</label>').appendTo(li);
         });
@@ -80,12 +86,15 @@ EntityLinkingTaggerDialog.prototype = {
         }
     },
 
-    tag: function (model) {
+    tag: function (
+        language,
+        terminology
+    ) {
         // Tag the column with the selected model
-        console.log("Tagging column", this.column.name, "with model", model);
         let data = {
             column: this.column.name,
-            model: model
+            language: language,
+            terminology: terminology
         }
         Refine.postProcess("aidava-tagger", "tag-entity-linking", data, {}, {rowsChanged: false, modelsChanged: false});
         this.hide();

@@ -15,7 +15,11 @@ public class EntityLinkingTaggerCommand extends EngineDependentCommand {
         final String columnName = httpServletRequest.getParameter("column");
         final Column column = project.columnModel.getColumnByName(columnName);
 
-        final String modelName = httpServletRequest.getParameter("model");
+        final String language = httpServletRequest.getParameter("language");
+        if (language == null) {
+            throw new Exception("Missing language parameter");
+        }
+        final String terminology = httpServletRequest.getParameter("terminology");
 
         if (column == null) {
             throw new Exception("Invalid column name: " + columnName);
@@ -23,7 +27,8 @@ public class EntityLinkingTaggerCommand extends EngineDependentCommand {
 
         return new EntityLinkingTaggerOperation(
                 column.getName(),
-                modelName,
+                language,
+                terminology,
                 column.getCellIndex()
         );
     }
