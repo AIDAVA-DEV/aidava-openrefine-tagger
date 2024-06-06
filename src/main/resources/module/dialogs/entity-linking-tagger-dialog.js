@@ -46,7 +46,8 @@ EntityLinkingTaggerDialog.prototype = {
         let langs = [
             {name: "English", value: "en"},
             {name: "German", value: "de"},
-            {name: "Estonian", value: "et"}
+            {name: "Estonian", value: "et"},
+            {name: "Dutch", value: "nl"},
         ];
 
         let terminologies = [
